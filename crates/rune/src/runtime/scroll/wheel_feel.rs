@@ -214,3 +214,7 @@ impl<S: 'static> Runtime<S> {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "wheel_feel_tests.rs"]
+mod tests;

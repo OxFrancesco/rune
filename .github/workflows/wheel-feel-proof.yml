@@ -1,0 +1,81 @@
+name: wheel-feel proof
+
+# Lives only on the fork's proof branch, not in the pull request: runs Rune's tests on Linux
+# twice, on the dev commit the change starts from and on the change with its unit tests, and
+# lists what fails on each, so a failure the change brings stands out from Linux-only ones.
+on:
+  push:
+    branches: [wheel-feel-proof]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        side: [base, change]
+    runs-on: ubuntu-latest
+    timeout-minutes: 345
+    env:
+      BASE: 764fbe9e75ebc91ab94c830181920826fb417be0
+      CARGO_BUILD_JOBS: 4
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_STRIP: debuginfo
+    steps:
+      - name: Room to build
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          sudo swapoff -a || true
+          sudo fallocate -l 12G /mnt/swapfile && sudo chmod 600 /mnt/swapfile && sudo mkswap /mnt/swapfile && sudo swapon /mnt/swapfile
+          free -h && df -h /
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ matrix.side == 'base' && env.BASE || github.sha }}
+      - run: sudo apt-get update && sudo apt-get install -y pkg-config libxkbcommon-dev libwayland-dev libfontconfig1-dev libdbus-1-dev
+      - name: Test
+        run: |
+          git log -1 --format='%H %s'
+          cargo test -p rune -p rune-kit --features rune-kit/markdown,rune-kit/mermaid --no-fail-fast 2>&1 | tee test.log || true
+          { grep -E '^test .* \.\.\. FAILED$' test.log | sed -E 's/^test (.*) \.\.\. FAILED$/\1/'; grep -E '^error: (test failed|could not compile)' test.log; } | sort -u > failed.txt || true
+          grep -E '^test result:' test.log | awk '{p+=$4; f+=$6} END {print p" passed, "f" failed"}' > totals.txt
+          grep -E 'wheel_feel' test.log > wheel_feel.txt || true
+          cat totals.txt wheel_feel.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.side }}
+          path: |
+            test.log
+            failed.txt
+            totals.txt
+            wheel_feel.txt
+
+  compare:
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+      - name: Compare
+        run: |
+          {
+            echo "## Rune tests on Linux (ubuntu-latest)"
+            echo "- dev (base): $(cat base/totals.txt)"
+            echo "- with the change: $(cat change/totals.txt)"
+            echo
+            echo "### Fail with the change but not on dev"
+            comm -13 base/failed.txt change/failed.txt | sed 's/^/- /'
+            echo
+            echo "### Fail on dev but not with the change"
+            comm -23 base/failed.txt change/failed.txt | sed 's/^/- /'
+            echo
+            echo "### Fail on both (Linux runner, not this change)"
+            comm -12 base/failed.txt change/failed.txt | sed 's/^/- /'
+            echo
+            echo "### The change's wheel tests"
+            sed 's/^/    /' change/wheel_feel.txt
+          } | tee -a "$GITHUB_STEP_SUMMARY"
