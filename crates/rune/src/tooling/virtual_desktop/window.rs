@@ -135,6 +135,7 @@ impl<S: 'static> Window<S> {
         rt.set_modifier_keys(modifier_keys);
         rt.set_tab_visits_controls(tab_visits_controls);
         if let Some(bars) = own.scroll_bars.or(args.scroll_bars) { rt.set_system_scroll_bars(bars); }
+        if own.wheel_smooth || args.wheel_smooth { rt.set_wheel_feel(crate::runtime::WheelFeel::SMOOTH); }
         rt.set_srgb_blend(srgb_blend);
         rt.set_font_smoothing(font_smoothing);
         rt.headless_chrome(chrome, titlebar, options.borderless);

@@ -1,0 +1,1 @@
+- On Linux, a mouse wheel's notches glide on a short spring instead of jumping, and a trackpad scroll pulls past a list's ends on a rubber band, coasts after the fingers lift and springs back, as a touch does. macOS, Windows, iOS and the web scroll as before. Headless runs still scroll 1:1 on every platform; `--wheel smooth` gives them the Linux feel.

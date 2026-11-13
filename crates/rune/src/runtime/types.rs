@@ -368,6 +368,9 @@ pub(super) enum GlideTo {
     /// The end a growth stack shrinks to under a reader who scrolled up (`ease_to_shrunk_end`),
     /// retargeted as its rows move.
     ShrunkEnd(f64),
+    /// Where a mouse wheel's notches aim (`runtime/scroll/wheel_feel.rs`): each notch adds to
+    /// it, and the glide steps on the wheel's own spring.
+    Wheel(f64),
 }
 
 impl GlideTo {
@@ -375,7 +378,7 @@ impl GlideTo {
     pub(super) fn offset(self) -> Option<f64> {
         match self {
             GlideTo::Bottom => None,
-            GlideTo::Offset(to) | GlideTo::ShrunkEnd(to) => Some(to),
+            GlideTo::Offset(to) | GlideTo::ShrunkEnd(to) | GlideTo::Wheel(to) => Some(to),
         }
     }
 }

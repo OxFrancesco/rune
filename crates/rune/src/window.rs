@@ -595,7 +595,7 @@ impl<S: 'static> Host<S> {
         rt.trace_channels = args.trace.as_ref().map(|_| Default::default());
         rt.set_live_waker(Arc::new(move || { let _ = live_proxy.send_event(WakeEvent::Live(slot)); }));
         rt.set_live_visible(false);
-        rt.set_os_drag(crate::drag_out::SUPPORTED);
+        rt.set_os_drag(crate::drag_out::SUPPORTED); rt.set_wheel_feel(crate::runtime::WheelFeel::NATIVE);
         rt.transparent = options.transparent;
         rt.track_marks = comp.is_some();
         rt.wall_start = Some(Instant::now());

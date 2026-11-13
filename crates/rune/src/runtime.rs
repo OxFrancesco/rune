@@ -154,6 +154,9 @@ pub use help_look::HelpLook;
 mod scroll_edge;
 #[path = "runtime/scroll/x.rs"]
 mod scroll_x;
+#[path = "runtime/scroll/wheel_feel.rs"]
+mod scroll_wheel_feel;
+pub(crate) use scroll_wheel_feel::WheelFeel;
 #[path = "runtime/scroll/offset.rs"]
 mod scroll_offset;
 #[path = "runtime/scroll/reveal.rs"]

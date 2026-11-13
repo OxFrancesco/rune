@@ -15,6 +15,9 @@ pub struct Args {
     pub scale: Option<f32>,
     pub theme: Option<String>,
     pub scroll_bars: Option<crate::ScrollBars>,
+    /// `--wheel smooth`: notches glide and trackpad gestures bounce, as Linux windows do.
+    /// Headless runs scroll 1:1 without it, on every platform.
+    pub(crate) wheel_smooth: bool,
     pub script: Option<PathBuf>,
     pub frames: Option<usize>,
     pub start: f64,
@@ -149,6 +152,7 @@ impl Args {
                 "--scale" => a.scale = Some(parse_scale(&val(&mut i)).unwrap_or_else(|e| die(&e))),
                 "--theme" => a.theme = Some(val(&mut i)),
                 "--scroll-bars" => a.scroll_bars = Some(parse_scroll_bars(&val(&mut i)).unwrap_or_else(|e| die(&e))),
+                "--wheel" => a.wheel_smooth = parse_wheel(&val(&mut i)).unwrap_or_else(|e| die(&e)),
                 "--script" => a.script = Some(val(&mut i).into()),
                 "--frames" => a.frames = Some(num(&val(&mut i)) as usize),
                 "--start" => {
@@ -260,6 +264,8 @@ const HELP: &str = "usage: <app> [window]
   --size WxH            viewport in points      --scale N   device scale (default 2)
   --theme dark|light    system appearance
   --scroll-bars MODE    scroll bars: when-scrolling (headless default), always, automatic
+  --wheel MODE          wheel and trackpad: plain (headless default, 1:1), smooth (notches
+                        glide, phased trackpad gestures rubber-band and coast, as on Linux)
   --script FILE.json    timestamped input, replayed headless (move/down/up/tap/drag, keys,
                         {\"focus\":false}); a key with \"repeat\":true is a held key's auto-repeat;
                         {\"type\":\"mark\",\"name\":N} marks a time;
@@ -325,6 +331,14 @@ pub(crate) fn parse_size(v: &str) -> Result<(f32, f32), String> {
 
 pub(crate) fn parse_scale(v: &str) -> Result<f32, String> {
     positive(v).ok_or_else(|| format!("--scale is a number above 0: {v}"))
+}
+
+pub(crate) fn parse_wheel(v: &str) -> Result<bool, String> {
+    match v.trim() {
+        "plain" => Ok(false),
+        "smooth" => Ok(true),
+        _ => Err(format!("--wheel is plain or smooth: {v}")),
+    }
 }
 
 pub(crate) fn parse_scroll_bars(v: &str) -> Result<crate::ScrollBars, String> {

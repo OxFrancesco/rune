@@ -193,6 +193,14 @@ impl<S: 'static> Runtime<S> {
         self.step_touch(TouchEvent::Up { id, velocity });
     }
 
+    /// Something else takes viewport `id` (a mouse wheel's glide): a coast or edge return a
+    /// lifted touch left on it stops owning it. A finger still down keeps it.
+    pub(super) fn touch_scroll_interrupt(&mut self, id: NodeId) {
+        if self.touch.scroll.is_some_and(|t| t.coasting() && t.id() == id) {
+            self.step_touch(TouchEvent::Settled { moving: false });
+        }
+    }
+
     /// Own the touched viewport's panned axis through momentum and its edge return. Other
     /// viewports use the native wheel path, including native clamping and stick-to-bottom.
     pub(super) fn step_touch_scroll(&mut self, id: NodeId, overflow: f64, dt: f32, horizontal: bool) -> Option<bool> {
