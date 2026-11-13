@@ -34,6 +34,11 @@ pub(super) struct WheelLock {
     /// while deltas of it still wait in the queue for `on_wheel` handlers.
     run: WheelRun,
     phase: WheelPhase,
+    /// What the wheel does where the system adds no motion of its own
+    /// (`runtime/scroll/wheel_feel.rs`).
+    pub(super) feel: super::scroll_wheel_feel::WheelFeel,
+    /// The trackpad gesture panning a viewport, under `feel.pan`.
+    pub(super) pan: super::scroll_wheel_feel::Pan,
 }
 
 /// Who has the deltas still to run, keyed by the gesture each belongs to: the gesture arriving
@@ -379,8 +384,8 @@ impl<S: 'static> Runtime<S> {
 
     /// Scrolls by a delta no `on_wheel` handler took, on the axis the gesture locked to.
     /// `phased` is that delta's own gesture's policy, which a delta queued before a newer
-    /// gesture began keeps.
-    pub(super) fn wheel_scroll_for(&mut self, gesture: Attempt, x: f32, y: f32, dx: f32, dy: f32, phased: bool) {
+    /// gesture began keeps; `precise` is false for a mouse wheel's notches.
+    pub(super) fn wheel_scroll_for(&mut self, gesture: Attempt, x: f32, y: f32, dx: f32, dy: f32, phased: bool, precise: bool) {
         if dx == 0.0 && dy == 0.0 { return; }
         self.wheel_lock.sync_gesture(gesture);
         // Without phases, a delta wholly on the other axis is another wheel turning (Shift let
@@ -392,7 +397,9 @@ impl<S: 'static> Runtime<S> {
                 self.wheel_lock.repick(gesture, scroller)
             }
         };
-        if horizontal { if dx != 0.0 { self.wheel_x(gesture, x, y, dx); } } else if dy != 0.0 { self.wheel(x, y, dy); }
+        if self.wheel_feels(precise, phased) {
+            self.wheel_feel(gesture, x, y, dx, dy, horizontal, phased);
+        } else if horizontal { if dx != 0.0 { self.wheel_x(gesture, x, y, dx); } } else if dy != 0.0 { self.wheel(x, y, dy); }
     }
 
     /// The platform began a trackpad gesture (winit's `TouchPhase::Started` on a wheel event):
@@ -411,17 +418,19 @@ impl<S: 'static> Runtime<S> {
     pub fn wheel_ended(&mut self) {
         let now = self.now_clock();
         self.wheel_lock.ended_at(now);
+        self.wheel_pan_release();
     }
 
     /// The window lost the pointer or focus: a gesture in progress won't report its end here.
     pub(super) fn wheel_lost(&mut self) {
         let pending = self.wheel_pending();
         self.wheel_lock.lost(pending);
+        self.wheel_pan_release();
     }
 
     /// Scrolls the horizontal viewport latched for `gesture` (or the innermost one at (x, y)) by
     /// `dx` points, 1:1.
-    fn wheel_x(&mut self, gesture: Attempt, x: f32, y: f32, dx: f32) {
+    pub(super) fn wheel_x(&mut self, gesture: Attempt, x: f32, y: f32, dx: f32) {
         self.release_hover_hold();
         self.dismiss_help();
         let latched = match self.wheel_lock.owner_of(gesture) { Some(WheelOwner::Horizontal(id)) => Some(*id), _ => None }.filter(|id| {

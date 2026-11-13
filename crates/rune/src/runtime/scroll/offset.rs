@@ -201,7 +201,10 @@ pub(super) fn glide_axis(spring: Spring, offset: &mut f64, glide: &mut Option<f3
 impl ScrollState {
     /// The spring the running glide steps on.
     pub(super) fn glide_spring(&self) -> Spring {
-        self.spring.unwrap_or(motion::GLIDE)
+        match self.mode {
+            ScrollMode::Glide { to: GlideTo::Wheel(_), .. } => super::scroll_wheel_feel::WHEEL_GLIDE,
+            _ => self.spring.unwrap_or(motion::GLIDE),
+        }
     }
 
     /// A hand, its momentum or a glide is moving the content this frame: what

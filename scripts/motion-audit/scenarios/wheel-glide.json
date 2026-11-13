@@ -1,0 +1,11 @@
+{
+  "events": [
+    {"t": 0.1, "type": "move", "x": 200, "y": 220},
+    {"t": 0.25, "type": "wheel", "x": 200, "y": 220, "dy": -120, "precise": false, "expect": "smooth", "element": "card-5"},
+    {"t": 0.3, "type": "wheel", "x": 200, "y": 220, "dy": -120, "precise": false},
+    {"t": 0.35, "type": "wheel", "x": 200, "y": 220, "dy": -120, "precise": false},
+    {"t": 0.9, "type": "wheel", "x": 200, "y": 220, "dy": 120, "precise": false, "expect": "smooth", "element": "card-5"},
+    {"t": 0.93, "type": "wheel", "x": 200, "y": 220, "dy": 120, "precise": false},
+    {"t": 0.96, "type": "wheel", "x": 200, "y": 220, "dy": 120, "precise": false}
+  ]
+}

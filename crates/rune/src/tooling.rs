@@ -410,10 +410,14 @@ pub(crate) enum FileStep {
     Leave,
 }
 
-/// A scripted wheel delta: vertical-only ones take the plain vertical path, unless an
-/// `on_wheel` handler may take them.
+/// A scripted swipe's delta, as a trackpad sends it (precise, unphased): vertical-only ones
+/// take the plain vertical path, unless an `on_wheel` handler may take them.
 pub(crate) fn wheel<S: 'static>(rt: &mut Runtime<S>, (x, y): (f32, f32), dx: f32, dy: f32) {
-    if dx == 0.0 && !rt.hears_wheel() { rt.wheel(x, y, dy) } else { rt.wheel_xy(x, y, dx, dy) }
+    if dx == 0.0 && !rt.hears_wheel() {
+        rt.wheel(x, y, dy)
+    } else if dx != 0.0 || dy != 0.0 {
+        rt.wheel_event(crate::WheelEvent::new(dx, dy).at(x, y).precise(true))
+    }
 }
 
 fn script_phase(e: &Value) -> crate::GesturePhase {

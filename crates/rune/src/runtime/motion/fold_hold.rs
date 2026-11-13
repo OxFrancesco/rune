@@ -39,7 +39,7 @@ impl<S: 'static> Runtime<S> {
         let cut = f64::from(cut);
         st.offset = (st.offset - cut).max(0.0);
         st.max = (st.max - cut).max(0.0);
-        if let ScrollMode::Glide { to: GlideTo::Offset(to) | GlideTo::ShrunkEnd(to), .. } = &mut st.mode { *to = (*to - cut).max(0.0); }
+        if let ScrollMode::Glide { to: GlideTo::Offset(to) | GlideTo::ShrunkEnd(to) | GlideTo::Wheel(to), .. } = &mut st.mode { *to = (*to - cut).max(0.0); }
     }
 
     /// Folds `held` (id, points cut below the window) in growth stack `c` of the commit's

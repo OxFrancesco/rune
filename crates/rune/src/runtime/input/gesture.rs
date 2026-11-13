@@ -33,7 +33,7 @@ impl<S: 'static> Runtime<S> {
             let ev = WheelEvent { momentum: self.wheel_lock.momentum(), ..ev };
             let gesture = self.wheel_lock.gesture;
             let phased = self.wheel_lock.phased();
-            if !self.offer_wheel(gesture, ev) { self.wheel_scroll_for(gesture, ev.x, ev.y, ev.dx, ev.dy, phased); }
+            if !self.offer_wheel(gesture, ev) { self.wheel_scroll_for(gesture, ev.x, ev.y, ev.dx, ev.dy, phased, ev.precise); }
         }
         if ev.phase == GesturePhase::Ended { self.wheel_ended(); }
     }
@@ -80,7 +80,7 @@ impl<S: 'static> Runtime<S> {
             _ => {}
         }
         if taken.is_none() {
-            self.wheel_scroll_for(gesture, ev.x, ev.y, ev.dx, ev.dy, phased);
+            self.wheel_scroll_for(gesture, ev.x, ev.y, ev.dx, ev.dy, phased, ev.precise);
         }
         taken.unwrap_or(false)
     }
